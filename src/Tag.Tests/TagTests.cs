@@ -110,6 +110,37 @@ namespace Tag.Tests
             var result = Encoding.ASCII.GetString(rawData);
             Assert.That(result, Is.EqualTo(expected));
         }
+        
+        [Test]
+        public void write_to_a_text_writer_multiple_times() {
+            var expected = "<div>yo</div><div>yo</div><div>yo</div>";
+
+            var outp = new StringWriter();
+            var subject = T.g("div")[ "yo" ];
+
+            subject.StreamTo(outp);
+            subject.StreamTo(outp);
+            subject.StreamTo(outp);
+
+            Assert.That(outp.ToString(), Is.EqualTo(expected));
+        }
+        
+        [Test]
+        public void write_to_a_byte_stream_multiple_times(){
+            var expected = "<div>yo</div><div>yo</div><div>yo</div>";
+
+            var outp = new MemoryStream();
+            var subject = T.g("div")[ "yo" ];
+
+            subject.StreamTo(outp, Encoding.ASCII);
+            subject.StreamTo(outp, Encoding.ASCII);
+            subject.StreamTo(outp, Encoding.ASCII);
+
+            var rawData = outp.ToArray();
+
+            var result = Encoding.ASCII.GetString(rawData);
+            Assert.That(result, Is.EqualTo(expected));
+        }
 
         [Test]
         public void tag_contents_are_joined_with_text_contents()
@@ -163,7 +194,7 @@ namespace Tag.Tests
         /// Return the compiled location of the DLL, as test harnesses often move things around
         /// </summary>
         private string BaseLocation(){
-            return Path.GetDirectoryName(this.GetType().Assembly.CodeBase.Replace("file:///","")) ?? "";
+            return Path.GetDirectoryName(GetType().Assembly.CodeBase.Replace("file:///","")) ?? "";
         }
     }
 }

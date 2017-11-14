@@ -25,8 +25,9 @@ Outputs `<div class="glass"><a href="#">Fish</a><br/></div>`
 ### Writing to a stream
 ```csharp
 var tag = T.g( . . . );
-tag.StreamTo(myWritableStream, Encoding.UTF8); // if called multiple times, this will write another copy of the tag
+tag.StreamTo(myWritableStream, Encoding.UTF8);
 ```
+if `StreamTo` is called multiple times, it will write another copy of the tag tree.
 
 ### Templating and injection pattern
 ```csharp
