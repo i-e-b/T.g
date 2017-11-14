@@ -1,6 +1,8 @@
 # T·g
 A simple C# generator for HTML/XML
 
+https://www.nuget.org/packages/Tag
+
 ## Why?
 Sometimes you have a project where a lot of code is needed to output
 a little markup. For those projects, markup templating engines make things more difficult,

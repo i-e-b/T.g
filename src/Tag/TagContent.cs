@@ -131,6 +131,10 @@ namespace Tag
             return this;
         }
 
+        /// <summary>
+        /// Supply the contents of the tag. These will not be rendered if `IsEmpty` is true.
+        /// Additional tags will be added after existing ones.
+        /// </summary>
         public TagContent Add(IEnumerable<TagContent> content)
         {
             if (content == null) return this;
