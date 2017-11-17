@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
@@ -157,6 +158,74 @@ namespace Tag.Tests
         }
 
         [Test]
+        public void can_update_child_contents_after_wrapping_in_parent()
+        {
+            var inner = T.g("p")["Hello"];
+            var parent = T.g("div")[T.g("span")[inner]];
+
+            inner.Add(", ");
+            inner.Add("World");
+
+            var expected = "<div><span><p>Hello, World</p></span></div>";
+            Assert.That(parent.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_include_a_single_tag_multiple_times() {
+            var br = T.g("br/");
+            var subject = T.g("div")["These",br,"are",br,"on",br,"multiple",br,"lines"];
+
+            var expected = "<div>These<br/>are<br/>on<br/>multiple<br/>lines</div>";
+
+            Assert.That(subject.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_include_a_deep_content_multiple_times(){
+            var content = T.g()[
+                T.g("span","class","bold")["Now"],
+                T.g("p")["is the winter of our discontent"],
+                T.g("p")["Made glorious summer by this sun of York;"],
+                T.g("p")[T.g("i")["--Gloucester"]]
+                ];
+
+            var subject = T.g()[
+                    T.g("div","class","style1")[content],
+                    T.g("div","class","style2")[content]
+                ];
+
+            var expected = "<div class=\"style1\"><span class=\"bold\">Now</span><p>is the winter of our discontent</p><p>Made glorious summer by this sun of York;</p><p><i>--Gloucester</i></p></div>" +
+                           "<div class=\"style2\"><span class=\"bold\">Now</span><p>is the winter of our discontent</p><p>Made glorious summer by this sun of York;</p><p><i>--Gloucester</i></p></div>";
+
+            var actual = subject.ToString();
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void using_preset_attributes(){
+            var attrs = new []{"class", "myStyle", "selectable", "false" };
+            var subject = T.g("outer", attrs)[T.g("inner/", attrs)];
+
+            var expected = "<outer class=\"myStyle\" selectable=\"false\"><inner class=\"myStyle\" selectable=\"false\"/></outer>";
+
+            Assert.That(subject.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void using_a_function_for_attributes() {
+            Func<int, string[]> attrs = (id) => new []{ "class","direct","id","dt_"+id,"name","direct #"+id};
+
+            var subject = T.g()[
+                T.g("div", attrs(1)),
+                T.g("div", attrs(2))
+                ];
+
+            var expected = "<div class=\"direct\" id=\"dt_1\" name=\"direct #1\"></div><div class=\"direct\" id=\"dt_2\" name=\"direct #2\"></div>";
+
+            Assert.That(subject.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
         public void adding_tag_content_from_linq()
         {
             var src = new[] { "a", "b", "c" };
@@ -168,16 +237,14 @@ namespace Tag.Tests
         }
 
         [Test]
-        public void can_update_child_contents_after_wrapping_in_parent()
+        public void setting_tag_content_from_linq()
         {
-            var inner = T.g("p")["Hello"];
-            var parent = T.g("div")[T.g("span")[inner]];
+            var src = new[] { "a", "b", "c" };
 
-            inner.Add(", ");
-            inner.Add("World");
+            var subject = T.g("x")[src.Select(s => T.g()[s]).ToArray()]; // note it must be an array, not a list or enumerable
+            //var subject = T.g("x")[src];  // this won't work, C# can't see the cast from string->TagContent behind the array
 
-            var expected = "<div><span><p>Hello, World</p></span></div>";
-            Assert.That(parent.ToString(), Is.EqualTo(expected));
+            Assert.That(subject.ToString(), Is.EqualTo("<x>abc</x>"));
         }
 
         [Test]
