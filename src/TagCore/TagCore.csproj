@@ -5,4 +5,8 @@
     <RootNamespace>Tag</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netcoreapp2.0\TagCore.xml</DocumentationFile>
+  </PropertyGroup>
+
 </Project>

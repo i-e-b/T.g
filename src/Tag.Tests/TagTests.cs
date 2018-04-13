@@ -257,6 +257,81 @@ namespace Tag.Tests
             Assert.That(subject.ToString(), Is.EqualTo(expected));
         }
 
+        [Test]
+        public void can_get_plain_text_output()
+        {
+            var expected = "This is the full content";
+
+            var subject = T.g("p")[
+                "This is the ",
+                T.g("i")["full"],
+                " content"
+            ];
+
+            var actual = subject.ToPlainText();
+
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_get_plain_text_output_with_named_tags_excluded (){
+            
+            var expected = "Welcome to our all new experience!";
+
+            var subject = T.g("html")[
+                T.g("head")[
+                    T.g("title")["Hello, world"],
+                    T.g("style")["/* styles here */"],
+                    T.g("script")
+                ],
+                T.g("body")[
+                    T.g("h1")["Welcome"],
+                    T.g("p")[
+                        "Welcome to our all new experience!"
+                    ],
+                    T.g("script")["/* script here */"]
+                ]
+            ];
+
+            var actual = subject.ToPlainText("head", "script", "h1");
+
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void plain_text_output_with_root_tag_excluded_is_empty()
+        {
+            var expected = "";
+
+            var subject = T.g("body")[
+                    T.g("h1")["Welcome"],
+                    T.g("p")[
+                        "Welcome to our all new experience!"
+                    ]
+                ];
+
+            var actual = subject.ToPlainText("body");
+
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void excluding_tags_that_are_not_in_the_content_is_ok ()
+        {
+            var expected = "Welcome";
+
+            var subject = T.g("body")[
+                T.g("h1")["Welcome"],
+                T.g("p")[
+                    "Welcome to our all new experience!"
+                ]
+            ];
+
+            var actual = subject.ToPlainText("p", "fish", "crumble", "pie");
+
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
         /// <summary>
         /// Return the compiled location of the DLL, as test harnesses often move things around
         /// </summary>

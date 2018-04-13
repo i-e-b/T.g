@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Tag
@@ -36,6 +37,19 @@ namespace Tag
         public string Properties { get; set; }
 
         /// <summary>
+        /// Render the contents of this tag, including sub-tags, excluding the tags themselves
+        /// </summary>
+        /// <param name="tagsToExclude">list of tag names that should be skipped when rendering. If null or empty, all tags will be rendered</param>
+        public string ToPlainText(params string[] tagsToExclude)
+        {
+            using (var sb = new StringWriter(new StringBuilder(4096)))
+            {
+                StreamTo(sb, false, tagsToExclude);
+                return sb.ToString();
+            }
+        }
+
+        /// <summary>
         /// Render this tag and its contents as a HTML/XML string
         /// </summary>
         public override string ToString()
@@ -52,7 +66,22 @@ namespace Tag
         /// </summary><remarks>Saves some string generation over multiple 'ToString' calls?</remarks>
         public void StreamTo(TextWriter tw)
         {
-            if (Tag != null)
+            StreamTo(tw, true);
+        }
+
+        /// <summary>
+        /// Stream to a text writer.
+        /// </summary>
+        /// <param name="tw">target text writer</param>
+        /// <param name="renderTags">if true, the XML/HTML tags will be rendered. If false, plain text contents will be rendered</param>
+        /// <param name="tagsToExclude">list of tag names that should be skipped when rendering. If null or empty, all tags will be rendered</param>
+        public void StreamTo(TextWriter tw, bool renderTags, params string[] tagsToExclude)
+        {
+            if (tagsToExclude != null && tagsToExclude.Length > 0 && tagsToExclude.Contains(Tag)) {
+                return;
+            }
+
+            if (renderTags && Tag != null)
             {
                 tw.Write('<');
                 tw.Write(Tag);
@@ -70,7 +99,7 @@ namespace Tag
             {
                 foreach (var tag in Contents)
                 {
-                    tw.Write(tag);
+                    tag.StreamTo(tw, renderTags, tagsToExclude);
                 }
             }
             else if (Text != null)
@@ -78,7 +107,7 @@ namespace Tag
                 tw.Write(Text);
             }
 
-            if (Tag != null)
+            if (renderTags && Tag != null)
             {
                 tw.Write("</");
                 tw.Write(Tag);
@@ -200,5 +229,6 @@ namespace Tag
             }
             Properties = sb.ToString();
         }
+
     }
 }
