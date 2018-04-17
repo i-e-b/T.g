@@ -248,16 +248,6 @@ namespace Tag.Tests
         }
 
         [Test]
-        public void can_load_a_file_as_tag_content() {
-            var expected = "<p>This is a sample content file <i>with</i> tags.</p>"; //make sure this is the same as the sample file
-
-            var cwd = BaseLocation();
-            var subject = T.g("p").LoadFile(Path.Combine(cwd, "SampleFile.txt"));
-
-            Assert.That(subject.ToString(), Is.EqualTo(expected));
-        }
-
-        [Test]
         public void can_get_plain_text_output()
         {
             var expected = "This is the full content";
@@ -330,13 +320,6 @@ namespace Tag.Tests
             var actual = subject.ToPlainText("p", "fish", "crumble", "pie");
 
             Assert.That(actual, Is.EqualTo(expected));
-        }
-
-        /// <summary>
-        /// Return the compiled location of the DLL, as test harnesses often move things around
-        /// </summary>
-        private string BaseLocation(){
-            return Path.GetDirectoryName(GetType().Assembly.CodeBase.Replace("file:///","")) ?? "";
         }
     }
 }

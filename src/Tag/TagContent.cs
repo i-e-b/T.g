@@ -202,15 +202,6 @@ namespace Tag
         }
 
         /// <summary>
-        /// Attempt to load a file as the tag's text content.
-        /// </summary>
-        public TagContent LoadFile(string filePath)
-        {
-            Text = File.ReadAllText(filePath); // could try storing the file and streaming out at render time?
-            return this;
-        }
-
-        /// <summary>
         /// Reset the properties string using an array alternating between key and value
         /// </summary>
         public void SerialiseProperties(string[] properties)
