@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Tag
@@ -115,7 +117,6 @@ namespace Tag
             }
         }
 
-        
         /// <summary>
         /// Stream to a byte stream with a given encoding.
         /// </summary>
@@ -127,7 +128,6 @@ namespace Tag
                 tw.Flush();
             }
         }
-
 
         /// <summary>
         /// Mark this as an empty tag. Will render as &lt;Tag/&gt; instead of &lt;Tag&gt;&lt;/Tag&gt;
@@ -221,5 +221,80 @@ namespace Tag
             Properties = sb.ToString();
         }
 
+        /// <summary>
+        /// Create a duplicate tag, recursively cloning any contents
+        /// </summary>
+        public TagContent Clone() {
+            var dup = new TagContent{
+                Properties = Properties,
+                IsEmpty = IsEmpty,
+                Tag = Tag,
+                Text = Text
+            };
+            if (Contents != null && Contents.Any()) {
+                dup.Contents = Contents.Select(c=>c.Clone()).ToList();
+            }
+            return dup;
+        }
+
+        /// <summary>
+        /// Create a duplicate outer tag without content
+        /// </summary>
+        public TagContent EmptyClone() {
+            return new TagContent{
+                Properties = Properties,
+                IsEmpty = IsEmpty,
+                Tag = Tag
+            };
+        }
+
+
+        /// <summary>
+        /// Create duplicates of this tag, each with an extra property and child tags.
+        /// The supplied type should be strings, TagContent, or tuples of (string, string, TagContent)
+        /// </summary>
+        /// <remarks>The weird reflection is to make Tuples work with multiple .Net framworks and versions</remarks>
+        public TagContent Repeat<Tt>(params Tt[] content)
+        {
+            if (typeof(Tt) == typeof(string)) {
+                return RepeatDirect(content as string[]);
+            }
+            if (typeof(Tt) == typeof(TagContent)) {
+                return RepeatDirect(content as TagContent[]);
+            }
+            var container = T.g();
+            var item1 = typeof(Tt).GetRuntimeField("Item1");
+            var item2 = typeof(Tt).GetRuntimeField("Item2");
+            var item3 = typeof(Tt).GetRuntimeField("Item3");
+            foreach (var tag in content)
+            {
+                var newTag = EmptyClone();
+                newTag.Properties += " " + item1.GetValue(tag) + "=\"" + item2.GetValue(tag) +"\"";
+                var val = item3.GetValue(tag);
+                newTag.Add( (val as TagContent) ?? (val as string) );
+                container.Add(newTag);
+            }
+            return container;
+        }
+
+        private TagContent RepeatDirect(string[] content)
+        {
+            var container = T.g();
+            foreach (var tag in content)
+            {
+                container.Add( EmptyClone().Add(tag) );
+            }
+            return container;
+        }
+        
+        private TagContent RepeatDirect(TagContent[] content)
+        {
+            var container = T.g();
+            foreach (var tag in content)
+            {
+                container.Add( EmptyClone().Add(tag) );
+            }
+            return container;
+        }
     }
 }

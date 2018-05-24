@@ -321,5 +321,69 @@ namespace Tag.Tests
 
             Assert.That(actual, Is.EqualTo(expected));
         }
+
+        [Test]
+        public void can_deep_clone_tags (){
+            var expected = "<p>This is the <i>first</i> tag</p><p>This is the <b>second</b> tag</p>";
+
+            var one = T.g("p")["This is the ", T.g("i")["first"], " tag"];
+            var two = one.Clone();
+            two.Contents[1] = T.g("b")["second"]; // directly mutate contents to demonstrate the cloning is deep
+
+            var subject = T.g()[one, two];
+
+            Assert.That(subject.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_copy_tags_with_blank_content (){
+            var expected = "<p attr=\"value\">This one has content</p><p attr=\"value\"></p>";
+
+            var one = T.g("p","attr","value")["This one has content"];
+            var two = one.EmptyClone();
+
+            var subject = T.g()[one, two];
+
+            Assert.That(subject.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_repeat_a_tag_with_multiple_contents (){
+            var expected = "<p>One</p><p>Two</p><p>Three</p>";
+
+            var subject = T.g("p").Repeat("One", "Two", "Three");
+
+            Assert.That(subject.ToString(), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_repeat_a_tag_with_multiple_contents_and_attributes (){
+            var expected = "<p>Here are the links</p><a class=\"c\" href=\"1\">One</a><a class=\"c\" href=\"2\">Two</a><a class=\"c\" href=\"3\">Three</a>";
+
+            var subject = T.g()[
+                T.g("p")["Here are the links"],
+                T.g("a", "class", "c").Repeat(("href", "1", "One"), ("href", "2", "Two"), ("href", "3", "Three"))
+            ];
+
+            var actual = subject.ToString();
+            Console.WriteLine(actual);
+            
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void can_repeat_a_tag_with_complex_contents_and_attributes (){
+            var expected = "<p>Here are the links</p><a class=\"c\" href=\"1\"><b>One</b></a><a class=\"c\" href=\"2\">Two</a><a class=\"c\" href=\"3\">Three</a>";
+
+            var subject = T.g()[
+                T.g("p")["Here are the links"],
+                T.g("a", "class", "c").Repeat(("href", "1", T.g("b")["One"]), ("href", "2", T.g()["Two"]), ("href", "3", T.g()["Three"]))
+            ];
+
+            var actual = subject.ToString();
+            Console.WriteLine(actual);
+            
+            Assert.That(actual, Is.EqualTo(expected));
+        }
     }
 }
