@@ -130,6 +130,34 @@ namespace Tag
         }
 
         /// <summary>
+        /// Encode as a byte array. Note: If you pass `Encoding.UTF8`, you will get a BOM at the start of your array. Use `new UTF8Encoding()` to avoid this.
+        /// </summary>
+        public byte[] ToBytes(Encoding encoding)
+        {
+            var ms = new MemoryStream(4096);
+            StreamTo(ms, encoding);
+            ms.Seek(0, SeekOrigin.Begin);
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// Encode as a byte array, containing a null character at the end.
+        /// Note: If you pass `Encoding.UTF8`, you will get a BOM at the start of your array. Use `new UTF8Encoding()` to avoid this.
+        /// For multi-byte encodings, this outputs zero-valued bytes of a length equivalent to a 'space' character.
+        /// </summary>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        public byte[] ToNullTerminatedBytes(Encoding encoding)
+        {
+            var ms = new MemoryStream(4096);
+            StreamTo(ms, encoding);
+            var charBytes = encoding.GetByteCount(" ");
+            for (int i = 0; i < charBytes; i++) { ms.WriteByte(0); }
+            ms.Seek(0, SeekOrigin.Begin);
+            return ms.ToArray();
+        }
+
+        /// <summary>
         /// Mark this as an empty tag. Will render as &lt;Tag/&gt; instead of &lt;Tag&gt;&lt;/Tag&gt;
         /// </summary>
         public TagContent Empty()

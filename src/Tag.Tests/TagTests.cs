@@ -385,5 +385,60 @@ namespace Tag.Tests
             
             Assert.That(actual, Is.EqualTo(expected));
         }
+
+        [Test]
+        public void can_output_null_terminated_byte_strings () {
+            
+            var expected = Encoding.UTF8
+                .GetBytes("<p>Here are the links</p><a class=\"c\" href=\"1\"><b>One</b></a><a class=\"c\" href=\"2\">Two</a><a class=\"c\" href=\"3\">Three</a>")
+                .ToList();
+            expected.Add(0);
+            
+            var subject = T.g()[
+                T.g("p")["Here are the links"],
+                T.g("a", "class", "c").Repeat(("href", "1", T.g("b")["One"]), ("href", "2", T.g()["Two"]), ("href", "3", T.g()["Three"]))
+            ];
+
+            var actual = subject.ToNullTerminatedBytes(new UTF8Encoding()); // Encoding.UTF8 adds a BOM by default only when streaming. Which is weird.
+            Assert.That(actual, Is.EquivalentTo(expected));
+        }
+
+        [Test]
+        public void can_output_null_termination_is_extended_for_long_encodings () {
+            
+            var expected = Encoding.UTF32
+                .GetBytes("<p>Here are the links</p><a class=\"c\" href=\"1\"><b>One</b></a><a class=\"c\" href=\"2\">Two</a><a class=\"c\" href=\"3\">Three</a>")
+                .ToList();
+
+            expected.InsertRange(0, Encoding.UTF32.GetPreamble());
+            expected.Add(0);
+            expected.Add(0);
+            expected.Add(0);
+            expected.Add(0);
+            
+            var subject = T.g()[
+                T.g("p")["Here are the links"],
+                T.g("a", "class", "c").Repeat(("href", "1", T.g("b")["One"]), ("href", "2", T.g()["Two"]), ("href", "3", T.g()["Three"]))
+            ];
+
+            var actual = subject.ToNullTerminatedBytes(Encoding.UTF32);
+            Assert.That(actual, Is.EquivalentTo(expected));
+        }
+
+        [Test]
+        public void can_output_encoded_byte_string () {
+            
+            var expected = Encoding.UTF8
+                .GetBytes("<p>Here are the links</p><a class=\"c\" href=\"1\"><b>One</b></a><a class=\"c\" href=\"2\">Two</a><a class=\"c\" href=\"3\">Three</a>")
+                .ToList();
+            
+            var subject = T.g()[
+                T.g("p")["Here are the links"],
+                T.g("a", "class", "c").Repeat(("href", "1", T.g("b")["One"]), ("href", "2", T.g()["Two"]), ("href", "3", T.g()["Three"]))
+            ];
+
+            var actual = subject.ToBytes(new UTF8Encoding());
+            Assert.That(actual, Is.EquivalentTo(expected));
+        }
     }
 }
