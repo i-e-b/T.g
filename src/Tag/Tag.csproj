@@ -14,4 +14,8 @@
     <DocumentationFile>bin\Release\netstandard1.2\Tag.xml</DocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MiniResharperAnnotations" Version="1.0.1" />
+  </ItemGroup>
+
 </Project>

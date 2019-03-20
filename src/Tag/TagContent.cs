@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using JetBrains.Annotations;
 
 namespace Tag
 {
@@ -16,7 +16,7 @@ namespace Tag
         /// <summary>
         /// Name of the tag. If null, only the contents are rendered (a plain text section)
         /// </summary>
-        public string Tag { get; set; }
+        [CanBeNull]public string Tag { get; set; }
 
         /// <summary>
         /// Contents of the tag, including all sub-tags
@@ -42,24 +42,24 @@ namespace Tag
         /// Render the contents of this tag, including sub-tags, excluding the tags themselves
         /// </summary>
         /// <param name="tagsToExclude">list of tag names that should be skipped when rendering. If null or empty, all tags will be rendered</param>
-        public string ToPlainText(params string[] tagsToExclude)
+        [NotNull]public string ToPlainText(params string[] tagsToExclude)
         {
             using (var sb = new StringWriter(new StringBuilder(4096)))
             {
                 StreamTo(sb, false, tagsToExclude);
-                return sb.ToString();
+                return sb.ToString() ?? "";
             }
         }
 
         /// <summary>
         /// Render this tag and its contents as a HTML/XML string
         /// </summary>
-        public override string ToString()
+        [NotNull]public override string ToString()
         {
             using (var sb = new StringWriter(new StringBuilder(4096)))
             {
                 StreamTo(sb);
-                return sb.ToString();
+                return sb.ToString() ?? "";
             }
         }
 
@@ -79,6 +79,8 @@ namespace Tag
         /// <param name="tagsToExclude">list of tag names that should be skipped when rendering. If null or empty, all tags will be rendered</param>
         public void StreamTo(TextWriter tw, bool renderTags, params string[] tagsToExclude)
         {
+            if (tw == null) return;
+
             if (tagsToExclude != null && tagsToExclude.Length > 0 && tagsToExclude.Contains(Tag)) {
                 return;
             }
@@ -122,6 +124,7 @@ namespace Tag
         /// </summary>
         public void StreamTo(Stream outp, Encoding textEncoding)
         {
+            if (outp == null) return;
             using (var tw = new StreamWriter(outp, textEncoding, 4096, true))
             {
                 StreamTo(tw);
@@ -132,12 +135,12 @@ namespace Tag
         /// <summary>
         /// Encode as a byte array. Note: If you pass `Encoding.UTF8`, you will get a BOM at the start of your array. Use `new UTF8Encoding()` to avoid this.
         /// </summary>
-        public byte[] ToBytes(Encoding encoding)
+        [NotNull]public byte[] ToBytes(Encoding encoding)
         {
             var ms = new MemoryStream(4096);
             StreamTo(ms, encoding);
             ms.Seek(0, SeekOrigin.Begin);
-            return ms.ToArray();
+            return ms.ToArray() ?? new byte[0];
         }
 
         /// <summary>
@@ -145,22 +148,20 @@ namespace Tag
         /// Note: If you pass `Encoding.UTF8`, you will get a BOM at the start of your array. Use `new UTF8Encoding()` to avoid this.
         /// For multi-byte encodings, this outputs zero-valued bytes of a length equivalent to a 'space' character.
         /// </summary>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
-        public byte[] ToNullTerminatedBytes(Encoding encoding)
+        [NotNull]public byte[] ToNullTerminatedBytes(Encoding encoding)
         {
             var ms = new MemoryStream(4096);
             StreamTo(ms, encoding);
-            var charBytes = encoding.GetByteCount(" ");
+            var charBytes = encoding?.GetByteCount(" ") ?? 1;
             for (int i = 0; i < charBytes; i++) { ms.WriteByte(0); }
             ms.Seek(0, SeekOrigin.Begin);
-            return ms.ToArray();
+            return ms.ToArray() ?? new byte[0];
         }
 
         /// <summary>
         /// Mark this as an empty tag. Will render as &lt;Tag/&gt; instead of &lt;Tag&gt;&lt;/Tag&gt;
         /// </summary>
-        public TagContent Empty()
+        [NotNull]public TagContent Empty()
         {
             IsEmpty = true;
             return this;
@@ -169,12 +170,12 @@ namespace Tag
         /// <summary>
         /// Implicitly render to a string
         /// </summary>
-        public static implicit operator string(TagContent t) => t.ToString();
+        [NotNull]public static implicit operator string(TagContent t) => t?.ToString() ?? "";
 
         /// <summary>
         /// Implicitly convert a string to a content-only tag
         /// </summary>
-        public static implicit operator TagContent(string s) {
+        [NotNull]public static implicit operator TagContent(string s) {
             return T.g()[s];
         }
 
@@ -182,7 +183,7 @@ namespace Tag
         /// Supply the contents of the tag. These will not be rendered if `IsEmpty` is true.
         /// Additional tags will be added after existing ones.
         /// </summary>
-        public TagContent Add(params TagContent[] content)
+        [NotNull]public TagContent Add(params TagContent[] content)
         {
             Add((IEnumerable<TagContent>)content);
             return this;
@@ -192,7 +193,7 @@ namespace Tag
         /// Supply the contents of the tag. These will not be rendered if `IsEmpty` is true.
         /// Additional tags will be added after existing ones.
         /// </summary>
-        public TagContent Add(IEnumerable<TagContent> content)
+        [NotNull]public TagContent Add(IEnumerable<TagContent> content)
         {
             if (content == null) return this;
 
@@ -212,7 +213,7 @@ namespace Tag
         /// Supply the contents of the tag. These will not be rendered if `IsEmpty` is true.
         /// Additional tags will be added after existing ones.
         /// </summary>
-        public TagContent this[params TagContent[] content]
+        [NotNull]public TagContent this[params TagContent[] content]
         {
             get { return Add(content); }
         }
@@ -220,7 +221,7 @@ namespace Tag
         /// <summary>
         /// Supply the text contents of the tag. These will not be rendered if `IsEmpty` is true or if child tags are added.
         /// </summary>
-        public TagContent this[string content]
+        [NotNull]public TagContent this[string content]
         {
             get
             {
@@ -234,6 +235,8 @@ namespace Tag
         /// </summary>
         public void SerialiseProperties(string[] properties)
         {
+            if (properties == null) return;
+
             var limit = properties.Length - (properties.Length % 2);
             if (limit <= 0) return;
 
@@ -252,7 +255,7 @@ namespace Tag
         /// <summary>
         /// Create a duplicate tag, recursively cloning any contents
         /// </summary>
-        public TagContent Clone() {
+        [NotNull]public TagContent Clone() {
             var dup = new TagContent{
                 Properties = Properties,
                 IsEmpty = IsEmpty,
@@ -260,7 +263,7 @@ namespace Tag
                 Text = Text
             };
             if (Contents != null && Contents.Any()) {
-                dup.Contents = Contents.Select(c=>c.Clone()).ToList();
+                dup.Contents = Contents.Select(c=>c?.Clone()).ToList();
             }
             return dup;
         }
@@ -268,7 +271,7 @@ namespace Tag
         /// <summary>
         /// Create a duplicate outer tag without content
         /// </summary>
-        public TagContent EmptyClone() {
+        [NotNull]public TagContent EmptyClone() {
             return new TagContent{
                 Properties = Properties,
                 IsEmpty = IsEmpty,
@@ -282,7 +285,7 @@ namespace Tag
         /// The supplied type should be strings, TagContent, or tuples of (string, string, TagContent)
         /// </summary>
         /// <remarks>The weird reflection is to make Tuples work with multiple .Net framworks and versions</remarks>
-        public TagContent Repeat<Tt>(params Tt[] content)
+        [NotNull]public TagContent Repeat<Tt>(params Tt[] content)
         {
             if (typeof(Tt) == typeof(string)) {
                 return RepeatDirect(content as string[]);
@@ -291,23 +294,30 @@ namespace Tag
                 return RepeatDirect(content as TagContent[]);
             }
             var container = T.g();
+            if (content == null) return container;
+
             var item1 = typeof(Tt).GetRuntimeField("Item1");
             var item2 = typeof(Tt).GetRuntimeField("Item2");
             var item3 = typeof(Tt).GetRuntimeField("Item3");
-            foreach (var tag in content)
+            if (item1 != null && item2 != null && item3 != null)
             {
-                var newTag = EmptyClone();
-                newTag.Properties += " " + item1.GetValue(tag) + "=\"" + item2.GetValue(tag) +"\"";
-                var val = item3.GetValue(tag);
-                newTag.Add( (val as TagContent) ?? (val as string) );
-                container.Add(newTag);
+                foreach (var tag in content)
+                {
+                    var newTag = EmptyClone();
+                    newTag.Properties += " " + item1.GetValue(tag) + "=\"" + item2.GetValue(tag) + "\"";
+                    var val = item3.GetValue(tag);
+                    newTag.Add((val as TagContent) ?? (val as string));
+                    container.Add(newTag);
+                }
             }
             return container;
         }
 
-        private TagContent RepeatDirect(string[] content)
+        [NotNull]private TagContent RepeatDirect(string[] content)
         {
             var container = T.g();
+            if (content == null) return container;
+
             foreach (var tag in content)
             {
                 container.Add( EmptyClone().Add(tag) );
@@ -315,9 +325,11 @@ namespace Tag
             return container;
         }
         
-        private TagContent RepeatDirect(TagContent[] content)
+        [NotNull]private TagContent RepeatDirect(TagContent[] content)
         {
             var container = T.g();
+            if (content == null) return container;
+
             foreach (var tag in content)
             {
                 container.Add( EmptyClone().Add(tag) );

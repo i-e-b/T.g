@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace Tag
 {
@@ -16,8 +17,9 @@ namespace Tag
         /// </summary>
         /// <param name="tagName">Name of the tag</param>
         /// <param name="properties">list alternating between property name and value</param>
-        public static TagContent g(string tagName, params string[] properties)
+        [NotNull]public static TagContent g(string tagName, params string[] properties)
         {
+            if (tagName == null) tagName = "";
             var empty = tagName.EndsWith("/", StringComparison.Ordinal);
             var t = new TagContent
             {
@@ -34,7 +36,7 @@ namespace Tag
         /// <summary>
         /// Create a new tag and mark it as empty
         /// </summary>
-        public static TagContent gEmpty(string tagName, params string[] properties)
+        [NotNull]public static TagContent gEmpty(string tagName, params string[] properties)
         {
             return g(tagName, properties).Empty();
         }
@@ -42,7 +44,7 @@ namespace Tag
         /// <summary>
         /// Create a blank tag. This is only used to intersperse plain text and tagged content in a parent
         /// </summary>
-        public static TagContent g()
+        [NotNull]public static TagContent g()
         {
             return new TagContent
             {
